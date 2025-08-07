@@ -1,0 +1,175 @@
+# ------------ promptfooconfig.yaml (0.117.4-compatible) ------------
+
+# 1️⃣  PROMPT TEMPLATE
+# One prompt entry whose text is supplied at runtime via {{ system_prompt }}
+prompts:
+  - id: q2
+    raw: "{{ system_prompt }}"
+
+# 2️⃣  MODEL PROVIDER
+providers:
+  - openai:gpt-4o-mini
+
+# 3️⃣  REUSABLE EVALUATOR  (anchor = &evaluate)
+evaluator_template: &evaluate
+  provider: openai:gpt-4o-mini
+  prompt: |-
+    You are an evaluator of AI-generated target-audience suggestions.
+    Question: "{{ question }}"
+    Idea: "{{ idea }}"
+    Prior answers: "{{ previous_answers }}"
+
+    The model’s answers were:
+    {{ output }}
+
+    Score each suggestion 1-5 for relevance, specificity, usefulness.
+    Return {"average": avg}
+  assert:
+    - type: json_schema
+      value: |
+        {
+          "type": "object",
+          "properties": {
+            "average": { "type": "number", "minimum": 4.5 }
+          },
+          "required": ["average"]
+        }
+
+# 4️⃣  SYSTEM PROMPT TEXT  (anchor = &sys)
+system_prompt_block: &sys |
+  Bad Example:
+  Idea: Branded Notebooks
+  Previous Answer: A subscription service offering high-quality, customizable notebooks embossed with your company’s logo.
+  Suggestion 1: People who like notebooks.
+  Suggestion 2: Businesses who need stationery.
+  Suggestion 3: Anyone looking for promotional items.
+
+  Good Example:
+  Idea: Branded Notebooks
+  Previous Answer: A subscription service offering high-quality, customizable notebooks embossed with your company’s logo.
+  Suggestion 1: HR managers at mid-size firms ordering bi-monthly branded notebooks for employee onboarding.
+  Suggestion 2: Marketing directors at tech startups seeking eco-friendly notebooks for trade-show giveaways.
+  Suggestion 3: Event planners for corporate conferences needing premium notebooks as attendee gifts.
+
+  You are Mentra, an expert AI business mentor.
+  Your task: generate exactly three distinct target-audience suggestions for the user’s business idea, using the idea and previous answer as context.
+
+  Constraints:
+  1. Exactly three items.
+  2. One sentence per item.
+  3. Each line starts with “Suggestion 1:”, “Suggestion 2:”, “Suggestion 3:”.
+  4. 5–20 words per sentence.
+  5. All three must be different customer segments.
+  6. Each suggestion must be strictly relevant to the idea and previous answer.
+  7. No extra text or commentary.
+
+# 5️⃣  TEST SUITE — 10 diverse ideas
+tests:
+  - name: notebooks
+    vars:
+      idea: "Design and sell branded notebooks."
+      previous_answers: "Subscription service for logo-printed notebooks."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert:
+      - type: contains
+        value: "Suggestion 1:"
+      - type: contains
+        value: "Suggestion 3:"
+    options:
+      evaluator: *evaluate
+
+  - name: collaboration-saas
+    vars:
+      idea: "All-in-one collaboration platform for distributed teams."
+      previous_answers: "A SaaS integrating chat, tasks, and file-sharing."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert: &fmt
+      - type: contains
+        value: "Suggestion 1:"
+      - type: contains
+        value: "Suggestion 3:"
+    options:
+      evaluator: *evaluate
+
+  - name: healthy-meals-seniors
+    vars:
+      idea: "Weekly healthy meal-delivery service tailored to seniors."
+      previous_answers: "Chef-crafted meals customised to seniors’ diets."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert: *fmt
+    options:
+      evaluator: *evaluate
+
+  - name: ai-course-marketplace
+    vars:
+      idea: "Online marketplace where AI experts sell advanced technical courses."
+      previous_answers: "Platform for AI specialists to monetise training content."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert: *fmt
+    options:
+      evaluator: *evaluate
+
+  - name: artisan-marketplace
+    vars:
+      idea: "E-commerce site connecting local artisans with buyers seeking handcrafted goods."
+      previous_answers: "Marketplace for commissioning custom pieces from local makers."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert: *fmt
+    options:
+      evaluator: *evaluate
+
+  - name: mindfulness-app
+    vars:
+      idea: "Mindfulness meditation app offering micro-sessions for busy professionals."
+      previous_answers: "Guided mindfulness breaks designed for workday stress relief."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert: *fmt
+    options:
+      evaluator: *evaluate
+
+  - name: wellness-sessions
+    vars:
+      idea: "Booking platform for wellness practitioners (massage, acupuncture, Reiki)."
+      previous_answers: "Marketplace to schedule personalised healing sessions."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert: *fmt
+    options:
+      evaluator: *evaluate
+
+  - name: coaching-meetups
+    vars:
+      idea: "Community site organising local leadership and clarity workshops for women entrepreneurs."
+      previous_answers: "Platform for hosting in-person coaching circles."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert: *fmt
+    options:
+      evaluator: *evaluate
+
+  - name: dance-classes
+    vars:
+      idea: "Platform to book yoga, dance, and somatic movement classes."
+      previous_answers: "App connecting instructors with students for creative movement sessions."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert: *fmt
+    options:
+      evaluator: *evaluate
+
+  - name: nature-rituals
+    vars:
+      idea: "Guided forest-bathing and sunrise meditation experiences."
+      previous_answers: "Nature-based walks and rituals for mindfulness seekers."
+      question: "Who is your target audience?"
+      system_prompt: *sys
+    assert: *fmt
+    options:
+      evaluator: *evaluate
+# ------------- end promptfooconfig.yaml -----------------
