@@ -1,0 +1,19 @@
+name: Prompt tests
+on: [push,pull_request]
+
+jobs:
+  test-prompts:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        question: [Q1, Q2, Q3, Q4, Q5, Q6, Q7, Q8]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm install -g promptfoo@0.117.4
+
+      - name: Eval ${{ matrix.question }}
+        run: promptfoo eval -c ${{ matrix.question }}/promptfooconfig.yaml
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
